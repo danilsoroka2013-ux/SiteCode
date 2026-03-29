@@ -119,18 +119,6 @@
             margin-top: 8px;
         }
         
-        .balance {
-            position: fixed;
-            bottom: 15px;
-            right: 15px;
-            background: rgba(0,0,0,0.8);
-            color: white;
-            padding: 6px 12px;
-            border-radius: 20px;
-            font-weight: bold;
-            font-size: 0.85em;
-        }
-        
         .loading {
             text-align: center;
             color: white;
@@ -146,14 +134,13 @@
             <div class="loading">🔄 Загрузка...</div>
         </div>
     </div>
-    <div class="balance" id="balance">💰 ?</div>
 
     <script>
         let tg = window.Telegram.WebApp;
         tg.ready();
         tg.expand();
         
-        // КАРТЫ (жестко зашиты в HTML - обновляйте вручную раз в неделю)
+        // КАРТЫ В МАГАЗИНЕ (обновляйте здесь раз в неделю)
         const SHOP_CARDS = [
             {
                 "id": "1",
@@ -218,19 +205,19 @@
                         title: 'Подтверждение покупки',
                         message: `Купить ${card.name} за ${card.price} монет?`,
                         buttons: [
-                            {id: 'cancel', type: 'cancel', text: '❌ Отмена'},
-                            {id: 'buy', type: 'default', text: '✅ Купить'}
+                            {id: 'cancel', type: 'cancel', text: 'Отмена'},
+                            {id: 'buy', type: 'default', text: 'Купить'}
                         ]
                     }, (buttonId) => {
                         if (buttonId === 'buy') {
-                            // Отправляем запрос на покупку боту
+                            // Отправляем запрос боту и сразу закрываем WebApp
                             tg.sendData(JSON.stringify({
                                 action: 'buy_card',
                                 card_id: card.id,
                                 price: card.price,
                                 card_name: card.name
                             }));
-                            tg.close(); // Закрываем WebApp после покупки
+                            tg.close();
                         }
                     });
                 };
@@ -249,21 +236,10 @@
             });
         }
         
-        // Запрашиваем баланс при открытии
-        function loadBalance() {
-            tg.sendData(JSON.stringify({action: 'get_balance'}));
-        }
-        
-        // Обработка ответа от бота (только для баланса)
-        tg.onEvent('mainButtonClicked', function() {});
-        
-        // Показываем карты сразу
+        // Показываем карты сразу при открытии
         displayCards();
         
-        // Запрашиваем баланс
-        loadBalance();
-        
-        // Сообщаем, что готовы
+        // Сообщаем, что WebApp готов
         tg.ready();
     </script>
 </body>
