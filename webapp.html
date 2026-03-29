@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>Card Collector - Магазин карт</title>
+    <title>Магазин карт</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         * {
@@ -29,7 +29,6 @@
             color: white;
             margin-bottom: 10px;
             font-size: 2em;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
         }
         
         .update-info {
@@ -51,19 +50,19 @@
             border-radius: 15px;
             overflow: hidden;
             box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-            transition: transform 0.3s ease;
             cursor: pointer;
+            transition: transform 0.2s;
         }
         
         .card:hover {
-            transform: translateY(-5px);
+            transform: translateY(-3px);
         }
         
         .card-image {
             width: 100%;
-            height: 200px;
+            height: 180px;
             object-fit: cover;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: #ddd;
         }
         
         .card-info {
@@ -81,7 +80,7 @@
             display: inline-block;
             padding: 3px 10px;
             border-radius: 12px;
-            font-size: 0.8em;
+            font-size: 0.75em;
             font-weight: bold;
             margin-bottom: 10px;
         }
@@ -93,189 +92,94 @@
         .rarity-Arcane { background: #ff9800; color: white; }
         .rarity-Legendary { background: #f44336; color: white; }
         .rarity-Mythic { background: #e91e63; color: white; }
-        .rarity-Godest { background: linear-gradient(135deg, #ffd700 0%, #ff8c00 100%); color: white; }
+        .rarity-Godest { background: linear-gradient(135deg, #ffd700, #ff8c00); color: white; }
         .rarity-Secret { background: #000; color: #ffd700; }
         
         .card-description {
             color: #666;
-            font-size: 0.9em;
+            font-size: 0.85em;
             margin-bottom: 10px;
-            line-height: 1.4;
+            line-height: 1.3;
         }
         
         .card-price {
-            font-size: 1.2em;
+            font-size: 1.1em;
             font-weight: bold;
             color: #4caf50;
-            margin-top: 10px;
         }
         
         .buy-button {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #667eea, #764ba2);
             color: white;
             border: none;
-            padding: 10px 20px;
+            padding: 8px 15px;
             border-radius: 8px;
-            font-size: 1em;
+            font-size: 0.9em;
             cursor: pointer;
             width: 100%;
             margin-top: 10px;
-            transition: opacity 0.3s ease;
-        }
-        
-        .buy-button:hover {
-            opacity: 0.9;
         }
         
         .balance {
             position: fixed;
             bottom: 20px;
             right: 20px;
-            background: rgba(0,0,0,0.85);
+            background: rgba(0,0,0,0.8);
             color: white;
-            padding: 12px 24px;
-            border-radius: 30px;
+            padding: 8px 16px;
+            border-radius: 20px;
             font-weight: bold;
-            font-size: 1.1em;
-            z-index: 1000;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-            backdrop-filter: blur(10px);
+            font-size: 0.9em;
         }
         
         .loading {
             text-align: center;
             color: white;
-            padding: 50px;
+            padding: 40px;
             font-size: 1.2em;
-        }
-        
-        .toast {
-            position: fixed;
-            bottom: 80px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: rgba(0,0,0,0.9);
-            color: white;
-            padding: 10px 20px;
-            border-radius: 25px;
-            font-size: 0.9em;
-            z-index: 2000;
-            animation: fadeOut 3s forwards;
-        }
-        
-        @keyframes fadeOut {
-            0% { opacity: 1; }
-            70% { opacity: 1; }
-            100% { opacity: 0; visibility: hidden; }
         }
         
         @media (max-width: 768px) {
             .cards-grid {
                 grid-template-columns: 1fr;
             }
-            
-            .balance {
-                bottom: 10px;
-                right: 10px;
-                padding: 8px 16px;
-                font-size: 0.9em;
-            }
-        }
-        
-        @keyframes pulse {
-            0% { opacity: 1; }
-            50% { opacity: 0.5; }
-            100% { opacity: 1; }
-        }
-        
-        .loading {
-            animation: pulse 1.5s ease-in-out infinite;
         }
     </style>
 </head>
 <body>
     <div class="container">
         <h1>🃏 Магазин карт</h1>
-        <div class="update-info">
-            📅 Обновление ассортимента: раз в неделю<br>
-            💡 Нажмите на карту для покупки
-        </div>
+        <div class="update-info">📅 Обновление раз в неделю | Нажмите на карту для покупки</div>
         <div class="cards-grid" id="cardsGrid">
-            <div class="loading">Загрузка карт...</div>
+            <div class="loading">🔄 Загрузка карт...</div>
         </div>
     </div>
-    <div class="balance" id="balance">
-        💰 Загрузка...
-    </div>
-    
+    <div class="balance" id="balance">💰 Загрузка...</div>
+
     <script>
         let tg = window.Telegram.WebApp;
         tg.ready();
         tg.expand();
         
-        // Функция показа уведомления
-        function showToast(message, isError = false) {
-            const toast = document.createElement('div');
-            toast.className = 'toast';
-            toast.style.background = isError ? 'rgba(220, 53, 69, 0.9)' : 'rgba(40, 167, 69, 0.9)';
-            toast.textContent = message;
-            document.body.appendChild(toast);
-            
-            setTimeout(() => {
-                toast.remove();
-            }, 3000);
-        }
+        let isLoading = false;
         
-        // Функция загрузки карт
+        // Загрузка карт при открытии
         function loadCards() {
-            tg.sendData(JSON.stringify({
-                action: 'get_shop_cards'
-            }));
+            if (isLoading) return;
+            isLoading = true;
+            tg.sendData(JSON.stringify({action: 'get_shop_cards'}));
         }
         
-        // Функция отображения карт
-        function displayCards(cards) {
-            const grid = document.getElementById('cardsGrid');
-            grid.innerHTML = '';
-            
-            if (!cards || cards.length === 0) {
-                grid.innerHTML = '<div class="loading">😔 В магазине пока нет карт</div>';
-                return;
-            }
-            
-            cards.forEach(card => {
-                const rarityClass = `rarity-${card.rarity}`;
-                const cardDiv = document.createElement('div');
-                cardDiv.className = 'card';
-                cardDiv.onclick = () => buyCard(card.id, card.name, card.price);
-                
-                cardDiv.innerHTML = `
-                    <img class="card-image" src="${card.image_url}" alt="${card.name}" onerror="this.src='https://via.placeholder.com/300x200?text=No+Image'">
-                    <div class="card-info">
-                        <div class="card-name">${escapeHtml(card.name)}</div>
-                        <div class="card-rarity ${rarityClass}">${card.rarity}</div>
-                        <div class="card-description">${escapeHtml(card.description)}</div>
-                        <div class="card-price">💰 ${card.price} монет</div>
-                        <button class="buy-button">Купить</button>
-                    </div>
-                `;
-                
-                grid.appendChild(cardDiv);
-            });
+        // Загрузка баланса
+        function loadBalance() {
+            tg.sendData(JSON.stringify({action: 'get_balance'}));
         }
         
-        // Функция для экранирования HTML
-        function escapeHtml(text) {
-            const div = document.createElement('div');
-            div.textContent = text;
-            return div.innerHTML;
-        }
-        
-        // Функция покупки карты
+        // Покупка карты
         function buyCard(cardId, cardName, price) {
             tg.showPopup({
-                title: 'Подтверждение покупки',
-                message: `Купить ${cardName} за ${price} монет?`,
+                title: 'Подтверждение',
+                message: `Купить "${cardName}" за ${price} монет?`,
                 buttons: [
                     {id: 'cancel', type: 'cancel', text: 'Отмена'},
                     {id: 'buy', type: 'default', text: 'Купить'}
@@ -285,52 +189,64 @@
                     tg.sendData(JSON.stringify({
                         action: 'buy_card',
                         card_id: cardId,
-                        price: price,
-                        card_name: cardName
+                        price: price
                     }));
                 }
             });
         }
         
-        // Обновление баланса
-        function updateBalance(balance) {
-            const balanceDiv = document.getElementById('balance');
-            balanceDiv.innerHTML = `💰 ${balance} монет`;
+        // Отображение карт
+        function displayCards(cards) {
+            const grid = document.getElementById('cardsGrid');
+            if (!cards || cards.length === 0) {
+                grid.innerHTML = '<div class="loading">😕 В магазине пока нет карт</div>';
+                return;
+            }
+            
+            grid.innerHTML = '';
+            cards.forEach(card => {
+                const div = document.createElement('div');
+                div.className = 'card';
+                div.onclick = () => buyCard(card.id, card.name, card.price);
+                div.innerHTML = `
+                    <img class="card-image" src="${card.image_url}" alt="${card.name}" onerror="this.src='https://via.placeholder.com/300x180?text=No+Image'">
+                    <div class="card-info">
+                        <div class="card-name">${escapeHtml(card.name)}</div>
+                        <div class="card-rarity rarity-${card.rarity}">${card.rarity}</div>
+                        <div class="card-description">${escapeHtml(card.description.substring(0, 80))}${card.description.length > 80 ? '...' : ''}</div>
+                        <div class="card-price">💰 ${card.price} монет</div>
+                        <button class="buy-button">Купить</button>
+                    </div>
+                `;
+                grid.appendChild(div);
+            });
+            isLoading = false;
         }
         
-        // Получение данных от бота
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+        
+        // Обработка входящих сообщений от бота
         tg.onEvent('viewportChanged', function() {
             tg.expand();
         });
         
-        // Запрашиваем карты и баланс при загрузке
+        // Загружаем данные
+        loadBalance();
         loadCards();
-        tg.sendData(JSON.stringify({action: 'get_balance'}));
         
-        // Обработка входящих данных от бота
-        window.handleTelegramData = function(data) {
-            if (data.type === 'cards') {
-                displayCards(data.cards);
-            } else if (data.type === 'balance') {
-                updateBalance(data.balance);
-            } else if (data.type === 'success') {
-                showToast(data.message);
-                updateBalance(data.new_balance);
-                // Обновляем карты после покупки
-                loadCards();
-            } else if (data.type === 'error') {
-                showToast(data.message, true);
-            }
-        };
-        
-        // Слушаем сообщения от бота
-        tg.onEvent('mainButtonClicked', function() {});
-        
-        // Обработка ответов от бота через WebApp
+        // ВАЖНО: перехватываем ответы от бота через WebApp
         const originalSendData = tg.sendData;
         tg.sendData = function(data) {
+            console.log("Sending:", data);
             originalSendData.call(tg, data);
         };
+        
+        // Сообщаем, что WebApp готов
+        tg.ready();
     </script>
 </body>
 </html>
