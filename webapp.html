@@ -149,6 +149,26 @@
             font-size: 1.2em;
         }
         
+        .toast {
+            position: fixed;
+            bottom: 80px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0,0,0,0.9);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 25px;
+            font-size: 0.9em;
+            z-index: 2000;
+            animation: fadeOut 3s forwards;
+        }
+        
+        @keyframes fadeOut {
+            0% { opacity: 1; }
+            70% { opacity: 1; }
+            100% { opacity: 0; visibility: hidden; }
+        }
+        
         @media (max-width: 768px) {
             .cards-grid {
                 grid-template-columns: 1fr;
@@ -192,12 +212,21 @@
         let tg = window.Telegram.WebApp;
         tg.ready();
         tg.expand();
-        tg.enableClosingConfirmation();
         
-        // Данные карт (будут обновляться через бота)
-        let cardsData = [];
+        // Функция показа уведомления
+        function showToast(message, isError = false) {
+            const toast = document.createElement('div');
+            toast.className = 'toast';
+            toast.style.background = isError ? 'rgba(220, 53, 69, 0.9)' : 'rgba(40, 167, 69, 0.9)';
+            toast.textContent = message;
+            document.body.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.remove();
+            }, 3000);
+        }
         
-        // Функция загрузки карт из Telegram
+        // Функция загрузки карт
         function loadCards() {
             tg.sendData(JSON.stringify({
                 action: 'get_shop_cards'
@@ -259,7 +288,6 @@
                         price: price,
                         card_name: cardName
                     }));
-                    tg.close();
                 }
             });
         }
@@ -270,7 +298,7 @@
             balanceDiv.innerHTML = `💰 ${balance} монет`;
         }
         
-        // Обработка данных от бота
+        // Получение данных от бота
         tg.onEvent('viewportChanged', function() {
             tg.expand();
         });
@@ -279,18 +307,30 @@
         loadCards();
         tg.sendData(JSON.stringify({action: 'get_balance'}));
         
-        // Обработка входящих данных
+        // Обработка входящих данных от бота
         window.handleTelegramData = function(data) {
             if (data.type === 'cards') {
-                cardsData = data.cards;
                 displayCards(data.cards);
             } else if (data.type === 'balance') {
                 updateBalance(data.balance);
+            } else if (data.type === 'success') {
+                showToast(data.message);
+                updateBalance(data.new_balance);
+                // Обновляем карты после покупки
+                loadCards();
+            } else if (data.type === 'error') {
+                showToast(data.message, true);
             }
         };
         
-        // Получаем данные от бота через WebApp
-        tg.onEvent('popupClosed', function() {});
+        // Слушаем сообщения от бота
+        tg.onEvent('mainButtonClicked', function() {});
+        
+        // Обработка ответов от бота через WebApp
+        const originalSendData = tg.sendData;
+        tg.sendData = function(data) {
+            originalSendData.call(tg, data);
+        };
     </script>
 </body>
 </html>
